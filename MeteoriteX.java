@@ -43,7 +43,7 @@ class MyGraphics extends JPanel {
         setLocation(0, 0);
         
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new MyTimerTask(this), 0, 5);
+        timer.scheduleAtFixedRate(new MyTimerTask(this), 0, 1);
     }
 
     @Override
@@ -61,6 +61,7 @@ class MyTimerTask extends TimerTask {
     int movementX = 1;
     int movementY = 1;
     int direction = new Random().nextInt(3) + 1;
+    int speed = new Random().nextInt(5) + 1;
 
     public MyTimerTask(MyGraphics graphics) {
         this.graphics = graphics;
@@ -72,16 +73,18 @@ class MyTimerTask extends TimerTask {
             graphics.x = graphics.x + movementX;
 
             if (graphics.x > 740 || graphics.x < 0) {
-                movementX = movementX * -1;
                 direction = new Random().nextInt(3) + 1;
+                speed = new Random().nextInt(5) + 1;
+                movementX = movementX * -1;
             }
         }
         else if (direction == 2) {
             graphics.y = graphics.y + movementY;
 
             if (graphics.y > 740 || graphics.y < 0) {
-                movementY = movementY * -1;
                 direction = new Random().nextInt(3) + 1;
+                speed = new Random().nextInt(5) + 1;
+                movementY = movementY * -1;
             }
         }
         else if (direction == 3) {
@@ -89,12 +92,17 @@ class MyTimerTask extends TimerTask {
             graphics.y = graphics.y + movementY;
 
             if (graphics.x > 740 || graphics.x < 0 || graphics.y > 740 || graphics.y < 0) {
+                direction = new Random().nextInt(3) + 1;
+                speed = new Random().nextInt(5) + 1;
                 movementX = movementX * -1;
                 movementY = movementY * -1;
-                direction = new Random().nextInt(3) + 1;
             }
         }
 
         graphics.repaint();
+
+        try {
+            Thread.sleep(speed);
+        } catch (InterruptedException e) {}
     }
 }
