@@ -1,13 +1,17 @@
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
 
 public class MeteoriteX {
     public static void main(String[] args) {
@@ -16,119 +20,173 @@ public class MeteoriteX {
 }
 
 class MyFrame extends JFrame {
-    MyGraphics myGraphics = new MyGraphics();
-
     public MyFrame() {
-        setTitle("MeteoriteX");
-        setSize(812, 828);
-        setLayout(null);
+        MyPaint paint = new MyPaint();
+
+        setTitle("Meteorite X");
+        setSize(800, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        add(myGraphics);
-        
+        add(paint);
+
         setVisible(true);
     }
 }
 
-class MyGraphics extends JPanel {
-    Image[] meteorites = new Image[1];
-    int[] x = new int[meteorites.length];
-    int[] y = new int[meteorites.length];
-    int[] xMovement = new int[meteorites.length];
-    int[] yMovement = new int[meteorites.length];
-    int[] speed = new int[meteorites.length];
-    int[] direction = new int[meteorites.length];
-    int[] count = new int[meteorites.length];
-    Timer[] timers = new Timer[meteorites.length];
-
-    public MyGraphics() {
-        setSize(800, 800);
+class MyPaint extends JPanel {
+    int number = 5;
+    int size = 50;
+    Image[] meteors = new Image[number];
+    Image bomb;
+    Random rand = new Random();
+    int[] x = new int[number];
+    int[] y = new int[number];
+    int[] dx = new int[number];
+    int[] dy = new int[number];
+    int[] direction = new int[number];
+    boolean[] meteoAlive = new boolean[number];
+    MyThread[] threads = new MyThread[number];
+    
+    public MyPaint() {
+        setSize(getWidth(), getHeight());
         setLocation(0, 0);
 
-        for (int i = 0; i < meteorites.length; i++) {
-            meteorites[i] = Toolkit.getDefaultToolkit().createImage(System.getProperty("user.dir") + File.separator + ("materials\\" + (new Random().nextInt(10) + 1) + ".png"));
-            
-            x[i] = new Random().nextInt(700);
-            y[i] = new Random().nextInt(700);
-            xMovement[i] = 1;
-            yMovement[i] = 1;
-            speed[i] = new Random().nextInt(10) + 1;
-            direction[i] = new Random().nextInt(3) + 1;
+        for (int i = 0; i < number; i++) {
+            meteors[i] = Toolkit.getDefaultToolkit().createImage(
+                System.getProperty("user.dir") + File.separator + "materials\\" + (rand.nextInt(10) + 1) + ".png"
+            );
+
+            bomb = Toolkit.getDefaultToolkit().createImage(System.getProperty("user.dir") + File.separator + "materials\\bomb.gif");
+
+            x[i] = rand.nextInt(400);
+            y[i] = rand.nextInt(400);
+            dx[i] = rand.nextInt(5) + 1;
+            dy[i] = dx[i];
+            direction[i] = rand.nextInt(2);
+            meteoAlive[i] = true;
+
+            threads[i] = new MyThread(this);
+            threads[i].start();
         }
 
-        for (int i = 0; i < meteorites.length; i++) {
-            timers[i] = new Timer();
-            timers[i].scheduleAtFixedRate(new MyTimerTask(this, speed[i]), 0, 1);
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.getClickCount() == 1) {
+                    for (int i = 0; i < number; i++) {
+                        removeMeteorAtPoint(e.getPoint());
+                    }
+                }
+            }
+        });
+    }
+
+    private void removeMeteorAtPoint(Point point) {
+        for (int i = 0; i < number; i++) {
+            if (meteors[i] != null && getRectMeteor(x[i], y[i]).contains(point)) {
+                meteors[i] = null;
+                meteoAlive[i] = false;
+                break;
+            }
         }
     }
 
     @Override
-    public void paintComponent(Graphics g) {
+    protected void paintComponent(Graphics g) {
         g.setColor(Color.black);
-        g.fillRect(0, 0, 800, 800);
+        g.fillRect(0, 0, getWidth(), getHeight());
 
-        for (int i = 0; i < meteorites.length; i++) {
-            if (direction[i] == 1) {
-                x[i] = x[i] + xMovement[i];
-
-                if (x[i] <= 0 || x[i] >= getWidth() - 60) {
-                    xMovement[i] = xMovement[i] * -1;
-                    direction[i] = new Random().nextInt(3) + 1;
-                    count[i] = 1;
-                }
+        for (int i = 0; i < number; i++) {
+            if (meteoAlive[i]) {
+                g.drawImage(meteors[i], x[i], y[i], x[i] + size, y[i] + size, 0, 0, 300, 300, this);
             }
-            
-            if (direction[i] == 2) {
-                y[i] = y[i] + yMovement[i];
-
-                if (y[i] <= 0 || y[i] >= getHeight() - 60) {
-                    yMovement[i] = yMovement[i] * -1;
-                    direction[i] = new Random().nextInt(3) + 1;
-                    count[i] = 1;
-                }
-            }
-            
-            if (direction[i] == 3) {
-                x[i] = x[i] + xMovement[i];
-                y[i] = y[i] + yMovement[i];
-
-                if (x[i] <= 0 || x[i] >= getWidth() - 60 || y[i] <= 0 || y[i] >= getHeight() - 60) {
-                    xMovement[i] = xMovement[i] * -1;
-                    yMovement[i] = yMovement[i] * -1;
-                    direction[i] = new Random().nextInt(3) + 1;
-                    count[i] = 1;
-                }
-            }
-
-            g.drawImage(meteorites[i], x[i], y[i], x[i] + 60, y[i] + 60, 0, 0, 300, 300, this);
         }
+
+        movingMeteor();
+    }
+
+    public void movingMeteor() {
+        for (int i = 0; i < number; i++) {
+            if (direction[i] == 0) {
+                x[i] += dx[i];
+            }
+            else if (direction[i] == 1) {
+                y[i] += dy[i];
+            }
+            else if (direction[i] == 2) {
+                x[i] += dx[i];
+                y[i] += dy[i];
+            }
+
+            checkWallHit();
+            checkMeteosHit();
+        }
+    }
+
+    public void checkWallHit() {
+        for (int i = 0; i < number; i++) {
+            if (x[i] <= 0 || y[i] <= 0) {
+                dx[i] = rand.nextInt(5) + 1;
+                dy[i] = dx[i];
+                direction[i] = rand.nextInt(3);
+            }
+
+            if (x[i] >= getWidth() - size || y[i] >= getHeight() - size) {
+                dx[i] = rand.nextInt(5) - 5;
+                dy[i] = dx[i];
+                direction[i] = rand.nextInt(3);
+            }
+        }
+    }
+
+    public void checkMeteosHit() {
+        for (int i = 0; i < number; i++) {
+            for (int j = i + 1; j < number; j++) {
+                if (getRectMeteor(x[i], y[i]).intersects(getRectMeteor(x[j], y[j]))) {
+                    if ((dx[i] < 0 && dy[i] < 0) || (dx[j] < 0 && dy[j] < 0)) {
+                        dx[i] = rand.nextInt(5) + 1;
+                        dy[i] = dx[i];
+                        dx[j] = rand.nextInt(5) - 5;
+                        dy[j] = dx[j];
+                    }
+
+                    if ((dx[i] > 0 && dy[i] > 0) || (dx[j] > 0 && dy[j] > 0)) {
+                        dx[i] = rand.nextInt(5) - 5;
+                        dy[i] = dx[i];
+                        dx[j] = rand.nextInt(5) + 1;
+                        dy[j] = dx[j];
+                    }
+                    
+                    direction[i] = rand.nextInt(3);
+                    direction[j] = rand.nextInt(3);
+                }
+            }
+        }
+    }
+
+    public Rectangle getRectMeteor(int x, int y) {
+        return new Rectangle(x, y, size, size);
     }
 }
 
-class MyTimerTask extends TimerTask {
-    MyGraphics graphics;
-    int speed = 0;
+class MyThread extends Thread {
+    MyPaint paint;
 
-    public MyTimerTask(MyGraphics graphics, int speed) {
-        this.graphics = graphics;
-        this.speed = speed;
+    public MyThread(MyPaint paint) {
+        this.paint = paint;
     }
 
     @Override
     public void run() {
-        for (int i = 0; i < graphics.meteorites.length; i++) {
-            if (graphics.count[i] == 1) {
-                speed = new Random().nextInt(10) + 1;
-                graphics.count[i] = 0;
-                System.out.println(speed);
+        while (true) {
+            paint.repaint();
+
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
-        graphics.repaint();
-
-        try {
-            Thread.sleep(speed);
-        } catch (InterruptedException ex) {}
     }
 }
