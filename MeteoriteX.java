@@ -2,13 +2,14 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -38,7 +39,7 @@ class MyPaint extends JPanel {
     int number = 5;
     int size = 50;
     Image[] meteors = new Image[number];
-    Image bomb;
+    Image[] bomb = new Image[number];
     Random rand = new Random();
     int[] x = new int[number];
     int[] y = new int[number];
@@ -46,7 +47,9 @@ class MyPaint extends JPanel {
     int[] dy = new int[number];
     int[] direction = new int[number];
     boolean[] meteoAlive = new boolean[number];
+    boolean[] bombAlive = new boolean[number];
     MyThread[] threads = new MyThread[number];
+    Timer[] timers = new Timer[number];
     
     public MyPaint() {
         setSize(getWidth(), getHeight());
@@ -57,37 +60,57 @@ class MyPaint extends JPanel {
                 System.getProperty("user.dir") + File.separator + "materials\\" + (rand.nextInt(10) + 1) + ".png"
             );
 
-            bomb = Toolkit.getDefaultToolkit().createImage(System.getProperty("user.dir") + File.separator + "materials\\bomb.gif");
+            bomb[i] = Toolkit.getDefaultToolkit().createImage(
+                System.getProperty("user.dir") + File.separator + "materials\\bomb.gif"
+            );
 
             x[i] = rand.nextInt(400);
             y[i] = rand.nextInt(400);
             dx[i] = rand.nextInt(5) + 1;
             dy[i] = dx[i];
-            direction[i] = rand.nextInt(2);
+            direction[i] = rand.nextInt(3);
             meteoAlive[i] = true;
+            bombAlive[i] = false;
 
             threads[i] = new MyThread(this);
             threads[i].start();
         }
 
         addMouseListener(new MouseAdapter() {
+
             @Override
             public void mousePressed(MouseEvent e) {
-                if (e.getClickCount() == 1) {
+                if (e.getClickCount() == 2) {
                     for (int i = 0; i < number; i++) {
-                        removeMeteorAtPoint(e.getPoint());
+                        if (meteors[i] != null && getRectMeteor(x[i], y[i]).contains(e.getPoint())) {
+                            dx[i] = 0;
+                            dy[i] = 0;
+                            meteoAlive[i] = false;
+                            bombAlive[i] = true;
+
+                            explosionMeteos();
+                        }
                     }
                 }
             }
         });
     }
 
-    private void removeMeteorAtPoint(Point point) {
+    public void explosionMeteos() {
         for (int i = 0; i < number; i++) {
-            if (meteors[i] != null && getRectMeteor(x[i], y[i]).contains(point)) {
-                meteors[i] = null;
-                meteoAlive[i] = false;
-                break;
+            if (bombAlive[i]) {
+                timers[i] = new Timer();
+                timers[i].schedule(new TimerTask() {
+
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < number; i++) {
+                            bombAlive[i] = false;
+                            repaint();
+                        }
+                    }
+                    
+                }, 500);
             }
         }
     }
@@ -98,8 +121,12 @@ class MyPaint extends JPanel {
         g.fillRect(0, 0, getWidth(), getHeight());
 
         for (int i = 0; i < number; i++) {
-            if (meteoAlive[i]) {
+            if (meteoAlive[i] && !bombAlive[i]) {
                 g.drawImage(meteors[i], x[i], y[i], x[i] + size, y[i] + size, 0, 0, 300, 300, this);
+            }
+
+            if (!meteoAlive[i] && bombAlive[i]) {
+                g.drawImage(bomb[i], x[i], y[i], x[i] + size, y[i] + size, 0, 0, 80, 80, this);
             }
         }
 
@@ -144,22 +171,24 @@ class MyPaint extends JPanel {
         for (int i = 0; i < number; i++) {
             for (int j = i + 1; j < number; j++) {
                 if (getRectMeteor(x[i], y[i]).intersects(getRectMeteor(x[j], y[j]))) {
-                    if ((dx[i] < 0 && dy[i] < 0) || (dx[j] < 0 && dy[j] < 0)) {
-                        dx[i] = rand.nextInt(5) + 1;
-                        dy[i] = dx[i];
-                        dx[j] = rand.nextInt(5) - 5;
-                        dy[j] = dx[j];
-                    }
+                    if (meteoAlive[i] && meteoAlive[j]) {
+                        if ((dx[i] < 0 && dy[i] < 0) || (dx[j] < 0 && dy[j] < 0)) {
+                            dx[i] = rand.nextInt(5) - 5;
+                            dy[i] = dx[i];
+                            dx[j] = rand.nextInt(5) + 1;
+                            dy[j] = dx[j];
+                        }
 
-                    if ((dx[i] > 0 && dy[i] > 0) || (dx[j] > 0 && dy[j] > 0)) {
-                        dx[i] = rand.nextInt(5) - 5;
-                        dy[i] = dx[i];
-                        dx[j] = rand.nextInt(5) + 1;
-                        dy[j] = dx[j];
+                        if ((dx[i] > 0 && dy[i] > 0) || (dx[j] > 0 && dy[j] > 0)) {
+                            dx[i] = rand.nextInt(5) - 5;
+                            dy[i] = dx[i];
+                            dx[j] = rand.nextInt(5) + 1;
+                            dy[j] = dx[j];
+                        }
+                        
+                        direction[i] = rand.nextInt(3);
+                        direction[j] = rand.nextInt(3);
                     }
-                    
-                    direction[i] = rand.nextInt(3);
-                    direction[j] = rand.nextInt(3);
                 }
             }
         }
