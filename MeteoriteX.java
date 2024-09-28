@@ -16,13 +16,14 @@ import javax.swing.JPanel;
 
 public class MeteoriteX {
     public static void main(String[] args) {
-        MyFrame frame = new MyFrame();
+        MyFrame frame = new MyFrame(2);
     }
 }
 
 class MyFrame extends JFrame {
-    public MyFrame() {
-        MyPaint paint = new MyPaint();
+    public MyFrame(int number) {
+        MyPaint paint = new MyPaint(number);
+        paint.number = number;
 
         setTitle("Meteorite X");
         setSize(800, 800);
@@ -36,22 +37,34 @@ class MyFrame extends JFrame {
 }
 
 class MyPaint extends JPanel {
-    int number = 5;
+    int number;
     int size = 50;
-    Image[] meteors = new Image[number];
-    Image[] bomb = new Image[number];
+    Image[] meteors;
+    Image[] bomb;
     Random rand = new Random();
-    int[] x = new int[number];
-    int[] y = new int[number];
-    int[] dx = new int[number];
-    int[] dy = new int[number];
-    int[] direction = new int[number];
-    boolean[] meteoAlive = new boolean[number];
-    boolean[] bombAlive = new boolean[number];
-    MyThread[] threads = new MyThread[number];
-    Timer[] timers = new Timer[number];
+    int[] x;
+    int[] y;
+    int[] dx;
+    int[] dy;
+    int[] direction;
+    boolean[] meteoAlive;
+    boolean[] bombAlive;
+    MyThread[] threads;
+    Timer[] timers;
     
-    public MyPaint() {
+    public MyPaint(int number) {
+        meteors = new Image[number];
+        bomb = new Image[number];
+        x = new int[number];
+        y = new int[number];
+        dx = new int[number];
+        dy = new int[number];
+        direction = new int[number];
+        meteoAlive = new boolean[number];
+        bombAlive = new boolean[number];
+        threads = new MyThread[number];
+        timers = new Timer[number];
+
         setSize(getWidth(), getHeight());
         setLocation(0, 0);
 
@@ -64,9 +77,9 @@ class MyPaint extends JPanel {
                 System.getProperty("user.dir") + File.separator + "materials\\bomb.gif"
             );
 
-            x[i] = rand.nextInt(400);
-            y[i] = rand.nextInt(400);
-            dx[i] = rand.nextInt(5) + 1;
+            x[i] = rand.nextInt(700);
+            y[i] = rand.nextInt(700);
+            dx[i] = rand.nextInt(3) + 1;
             dy[i] = dx[i];
             direction[i] = rand.nextInt(3);
             meteoAlive[i] = true;
@@ -154,13 +167,13 @@ class MyPaint extends JPanel {
     public void checkWallHit() {
         for (int i = 0; i < number; i++) {
             if (x[i] <= 0 || y[i] <= 0) {
-                dx[i] = rand.nextInt(5) + 1;
+                dx[i] = rand.nextInt(3) + 1;
                 dy[i] = dx[i];
                 direction[i] = rand.nextInt(3);
             }
 
             if (x[i] >= getWidth() - size || y[i] >= getHeight() - size) {
-                dx[i] = rand.nextInt(5) - 5;
+                dx[i] = rand.nextInt(3) - 3;
                 dy[i] = dx[i];
                 direction[i] = rand.nextInt(3);
             }
@@ -173,16 +186,16 @@ class MyPaint extends JPanel {
                 if (getRectMeteor(x[i], y[i]).intersects(getRectMeteor(x[j], y[j]))) {
                     if (meteoAlive[i] && meteoAlive[j]) {
                         if ((dx[i] < 0 && dy[i] < 0) || (dx[j] < 0 && dy[j] < 0)) {
-                            dx[i] = rand.nextInt(5) - 5;
+                            dx[i] = rand.nextInt(3) - 3;
                             dy[i] = dx[i];
-                            dx[j] = rand.nextInt(5) + 1;
+                            dx[j] = rand.nextInt(3) + 1;
                             dy[j] = dx[j];
                         }
 
                         if ((dx[i] > 0 && dy[i] > 0) || (dx[j] > 0 && dy[j] > 0)) {
-                            dx[i] = rand.nextInt(5) - 5;
+                            dx[i] = rand.nextInt(3) - 3;
                             dy[i] = dx[i];
-                            dx[j] = rand.nextInt(5) + 1;
+                            dx[j] = rand.nextInt(3) + 1;
                             dy[j] = dx[j];
                         }
                         
