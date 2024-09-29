@@ -192,14 +192,14 @@ class MyPaint extends JPanel {
     // method ตรวจสอบการชนกับขอบของ frame
     public void checkWallHit() {
         for (int i = 0; i < number; i++) {
-            // เมื่อขอบชนแถวๆ ผั่งซ้าย
+            // เมื่อชนเข้ากับขอบผั่งขวา
             if (x[i] <= 0 || y[i] <= 0) {
                 dx[i] = rand.nextInt(3) + 1;
                 dy[i] = dx[i];
                 direction[i] = rand.nextInt(3);
             }
 
-            // เมื่อขอบชนแถวๆ ผั่งขวา
+            // เมื่อชนเข้ากับขอบผั่งขวา
             if (x[i] >= getWidth() - size || y[i] >= getHeight() - size) {
                 dx[i] = rand.nextInt(3) - 3;
                 dy[i] = dx[i];
@@ -216,22 +216,38 @@ class MyPaint extends JPanel {
                 if (getRectMeteor(x[i], y[i]).intersects(getRectMeteor(x[j], y[j]))) {
                     // จะทำงานก็ต่อเมื่ออุกกาบาตทั้ง 2 ลูกยังไม่ระเบิด
                     if (meteoAlive[i] && meteoAlive[j]) {
-                        // ถ้าการเคลื่อนที่ของอุกกาบาตทั้งสองเป็นลบ ทำการสุ่มการเคลื่อนที่
-                        if (dx[i] < 0 || dy[i] < 0 || dx[j] > 0 || dy[j] > 0) {
+                        // ถ้าการเคลื่อนที่ของอุกกาบาตแนว x เป็นลบ
+                        if (dx[i] < 0) {
                             dx[i] = rand.nextInt(3) - 3;
-                            dy[i] = dx[i];
                             dx[j] = rand.nextInt(3) + 1;
-                            dy[j] = dx[j];
+
+                            // ถ้าการเคลื่อนที่ของอุกกาบาตแนว y เป็นลบ
+                            if (dy[i] < 0) {
+                                dy[i] = dx[i];
+                                dy[j] = -dx[j];
+                            }
+                            else {
+                                dy[i] = -dx[i];
+                                dy[j] = dx[j];
+                            }
                         }
 
-                        // ถ้าการเคลื่อนที่ของอุกกาบาตทั้งสองเป็นบวก ทำการสุ่มการเคลื่อนที่
-                        if (dx[i] > 0 || dy[i] > 0 || dx[j] < 0 || dy[j] < 0) {
+                        // ถ้าการเคลื่อนที่ของอุกกาบาตแนว x เป็นบวก
+                        if (dx[i] > 0) {
                             dx[i] = rand.nextInt(3) - 3;
-                            dy[i] = dx[i];
                             dx[j] = rand.nextInt(3) + 1;
-                            dy[j] = dx[j];
+
+                            // ถ้าการเคลื่อนที่ของอุกกาบาตแนว y เป็นบวก
+                            if (dy[i] > 0) {
+                                dy[i] = dx[i];
+                                dy[j] = -dx[j];
+                            }
+                            else {
+                                dy[i] = -dx[i];
+                                dy[j] = dx[j];
+                            }
                         }
-                        
+
                         // สุ่มลักษณะการเคลื่อนที่ใหม่
                         direction[i] = rand.nextInt(3);
                         direction[j] = rand.nextInt(3);
